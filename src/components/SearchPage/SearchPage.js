@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { debounce } from 'lodash';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { urlConfig } from '../../config';
@@ -7,8 +8,8 @@ function SearchPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [ageRange, setAgeRange] = useState(6); // Initialize with minimum value
     const [searchResults, setSearchResults] = useState([]);
-    const categories = ['Living', 'Bedroom', 'Bathroom', 'Kitchen', 'Office'];
-    const conditions = ['New', 'Like New', 'Older'];
+    const categories = useMemo(() => ['Living', 'Bedroom', 'Bathroom', 'Kitchen', 'Office'], []);
+    const conditions = useMemo(() => ['New', 'Like New', 'Older'], []);
 
     useEffect(() => {
         // fetch all products
@@ -55,6 +56,11 @@ function SearchPage() {
     };
 
     const navigate = useNavigate();
+
+    const debouncedSearch = useMemo(
+        () => debounce(handleSearch, 300),
+        [handleSearch]
+    );
 
     const goToDetailsPage = (productId) => {
         navigate(`/app/product/${productId}`);
@@ -107,9 +113,12 @@ function SearchPage() {
                         className='form-control mb-2'
                         placeholder='Search for items...'
                         value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
+                        onChange={e => {
+                            setSearchQuery(e.target.value);
+                            debouncedSearch();
+                        }}
                     />
-                    <button className='btn btn-primary' onClick={handleSearch}>Search</button>
+                    <button className='btn btn-primary' onClick={debouncedSearch}>Search</button>
                     <div className='search-results mt-4'>
                         {searchResults.length > 0 ? (
                             searchResults.map(product => (
